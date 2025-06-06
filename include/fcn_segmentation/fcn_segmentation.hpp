@@ -4,6 +4,10 @@
 #include <mutex>
 #include <queue>
 
+// Torch header
+#include <torch/script.h>
+#include <torch/torch.h>
+
 // ROS header
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -28,6 +32,10 @@ private:
   std::queue<sensor_msgs::msg::Image::SharedPtr> img_buff_;
 
   std::mutex mtx_;
+
+  // Load the scripted model
+  torch::jit::script::Module module_;
+  torch::Device device_;
 };
 
 } // namespace fcn_segmentation

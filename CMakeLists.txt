@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(fcn_segmentation)
 
+set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/libtorch")
+set(CMAKE_BUILD_TYPE Release)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -12,6 +15,8 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(Torch REQUIRED)
 
 add_executable(fcn_segmentation_node
   src/fcn_segmentation_node.cpp
@@ -23,7 +28,11 @@ target_include_directories(fcn_segmentation_node PUBLIC
 
 ament_target_dependencies(fcn_segmentation_node PUBLIC
   rclcpp
-  sensor_msgs)
+  sensor_msgs
+  cv_bridge)
+
+target_link_libraries(fcn_segmentation_node PUBLIC
+  ${TORCH_LIBRARIES})
 
 target_compile_features(fcn_segmentation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
@@ -33,7 +42,13 @@ install(TARGETS fcn_segmentation_node
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
 
+install(DIRECTORY params
+  DESTINATION share/${PROJECT_NAME})
+
 install(DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME})
+
+install(DIRECTORY models
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
