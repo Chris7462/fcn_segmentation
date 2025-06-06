@@ -21,6 +21,10 @@ private:
   void img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
 
+  void timer_callback();
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr seg_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+
   std::queue<sensor_msgs::msg::Image::SharedPtr> img_buff_;
 
   std::mutex mtx_;
