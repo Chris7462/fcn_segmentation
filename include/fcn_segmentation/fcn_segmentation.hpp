@@ -5,8 +5,14 @@
 #include <queue>
 
 // Torch header
-#include <torch/script.h>
 #include <torch/torch.h>
+#include <torch/script.h>
+
+// OpenCV
+#include <opencv2/opencv.hpp>
+#include <opencv2/cudaarithm.hpp>
+#include <opencv2/cudawarping.hpp>
+#include <opencv2/cudaimgproc.hpp>
 
 // ROS header
 #include <rclcpp/rclcpp.hpp>
@@ -34,8 +40,11 @@ private:
   std::mutex mtx_;
 
   // Load the scripted model
-  torch::jit::script::Module module_;
   torch::Device device_;
+  cv::cuda::HostMem pinned_host_;
+  cv::cuda::GpuMat gpu_bgr_;
+  cv::cuda::GpuMat gpu_float_;
+  torch::jit::script::Module module_;
 };
 
 } // namespace fcn_segmentation

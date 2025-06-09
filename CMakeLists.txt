@@ -17,6 +17,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(Torch REQUIRED)
+find_package(OpenCV REQUIRED)
 
 add_executable(fcn_segmentation_node
   src/fcn_segmentation_node.cpp
@@ -24,7 +25,8 @@ add_executable(fcn_segmentation_node
 
 target_include_directories(fcn_segmentation_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  ${OpenCV_INCLUDE_DIRS})
 
 ament_target_dependencies(fcn_segmentation_node PUBLIC
   rclcpp
@@ -32,7 +34,8 @@ ament_target_dependencies(fcn_segmentation_node PUBLIC
   cv_bridge)
 
 target_link_libraries(fcn_segmentation_node PUBLIC
-  ${TORCH_LIBRARIES})
+  ${TORCH_LIBRARIES}
+  ${OpenCV_LIBS})
 
 target_compile_features(fcn_segmentation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
