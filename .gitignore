@@ -12,6 +12,7 @@
 
 # Ignore files with certain extension
 *.onnx
+*.trt
 *.pyc
 
 # Ignore build, devel, and logs folder

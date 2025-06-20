@@ -1,6 +1,6 @@
 fcn_segmentation_node:
   ros__parameters:
-    model_path: "install/fcn_segmentation/share/fcn_segmentation/models"
-    model_file: "fcn_resnet101_scripted.pt"
+    engine_file: "fcn_resnet50_1238x374.trt"
     width: 1238
     height: 374
+    num_classes: 21

@@ -7,6 +7,7 @@
 //#include <opencv2/core.hpp>
 
 // ROS header
+#include <ament_index_cpp/get_package_share_directory.hpp>
 //#include <cv_bridge/cv_bridge.hpp>
 
 // local header
@@ -22,14 +23,23 @@ using namespace std::chrono_literals;
 FCNSegmentation::FCNSegmentation()
 : Node("fcn_segmentation_node")
 {
-  fs::path model_path = declare_parameter("model_path", fs::path());
-  fs::path model_file = model_path / declare_parameter("model_file", std::string());
+  fs::path engine_path = ament_index_cpp::get_package_share_directory("fcn_segmentation");
+  fs::path engine_file = engine_path / "engines" / declare_parameter("engine_file", std::string());
   int width = declare_parameter<int>("width", 1238);
   int height = declare_parameter<int>("height", 374);
+  int num_classes = declare_parameter<int>("num_classes", 21);
 
-  if (!fs::exists(model_file)) {
+  if (!fs::exists(engine_file)) {
     RCLCPP_ERROR(get_logger(), "Load model failed");
     rclcpp::shutdown();
+  }
+
+  try {
+    inferencer_ = std::make_shared<TensorRTInferencer>(
+      engine_file, width, height, num_classes);
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to create TensorRTInferencer: %s", e.what());
+    throw;
   }
 
   rclcpp::QoS qos(10);
@@ -53,6 +63,8 @@ void FCNSegmentation::img_callback(const sensor_msgs::msg::Image::SharedPtr msg)
 void FCNSegmentation::timer_callback()
 {
   if (!img_buff_.empty()) {
+    RCLCPP_INFO(get_logger(), "Buffer size = %ld", img_buff_.size());
+
     rclcpp::Time current_time = rclcpp::Node::now();
     mtx_.lock();
     if ((current_time - rclcpp::Time(img_buff_.front()->header.stamp)).seconds() > 0.1) {

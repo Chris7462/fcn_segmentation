@@ -12,6 +12,8 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(tensorrt_inferencer REQUIRED)
 
 add_executable(fcn_segmentation_node
   src/fcn_segmentation_node.cpp
@@ -23,7 +25,9 @@ target_include_directories(fcn_segmentation_node PUBLIC
 
 ament_target_dependencies(fcn_segmentation_node PUBLIC
   rclcpp
-  sensor_msgs)
+  sensor_msgs
+  ament_index_cpp
+  tensorrt_inferencer)
 
 target_compile_features(fcn_segmentation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
@@ -39,7 +43,7 @@ install(DIRECTORY params
 install(DIRECTORY rviz
   DESTINATION share/${PROJECT_NAME})
 
-install(DIRECTORY models
+install(DIRECTORY engines
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
