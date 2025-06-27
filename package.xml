@@ -11,6 +11,7 @@
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>ament_index_cpp</depend>
+  <depend>cv_bridge</depend>
   <depend>tensorrt_inferencer</depend>
 
   <test_depend>ament_lint_auto</test_depend>

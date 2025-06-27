@@ -1,38 +1,118 @@
 #pragma once
 
 // C++ header
-#include <queue>
-#include <mutex>
+#include <atomic>
+#include <filesystem>
 #include <memory>
+#include <mutex>
 
 // ROS header
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/header.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
-// Local header
+//// OpenCV header
+#include <opencv2/core.hpp>
+
+// local header
 #include "tensorrt_inferencer/tensorrt_inferencer.hpp"
 
 
 namespace fcn_segmentation
 {
 
+namespace fs = std::filesystem;
+
 class FCNSegmentation : public rclcpp::Node
 {
 public:
+  /**
+   * @brief Constructor for FCNSegmentation node
+   */
   FCNSegmentation();
-  ~FCNSegmentation() = default;
+
+  /**
+  * @brief Destructor for FCNSegmentation node
+  */
+  ~FCNSegmentation();
 
 private:
-  void img_callback(const sensor_msgs::msg::Image::SharedPtr msg);
+  /**
+   * @brief Initialize node parameters with validation
+   * @return true if initialization successful, false otherwise
+   */
+  bool initialize_parameters();
+
+    /**
+   * @brief Initialize TensorRT inferencer
+   * @return true if initialization successful, false otherwise
+   */
+  bool initialize_inferencer();
+
+  /**
+   * @brief Initialize ROS2 publishers, subscribers, and timers
+   */
+  void initialize_ros_components();
+
+  /**
+   * @brief Callback function for incoming images
+   * @param msg Incoming image message
+   */
+  void image_callback(const sensor_msgs::msg::Image::SharedPtr msg);
+
+  /**
+   * @brief Timer callback for processing images at regular intervals
+   */
   void timer_callback();
 
+  /**
+   * @brief Process input image through FCN segmentation
+   * @param input_image Input OpenCV image
+   * @return Segmentation mask as OpenCV Mat
+   */
+  cv::Mat process_image(const cv::Mat & input_image);
+
+  /**
+   * @brief Publish segmentation result
+   * @param segmentation_mask Segmentation result as OpenCV Mat
+   * @param header Original message header for timestamp consistency
+   */
+  void publish_segmentation_result(const cv::Mat & segmentation,
+    const std_msgs::msg::Header & header);
+
+  void publish_overlay_result(const cv::Mat & overlay,
+    const std_msgs::msg::Header & header);
+
 private:
-  std::shared_ptr<TensorRTInferencer> inferencer_;
+  // ROS2 components
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr fcn_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr fcn_overlay_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
-  std::queue<sensor_msgs::msg::Image::SharedPtr> img_buff_;
-  std::mutex mtx_;
+
+  // TensorRT inferencer
+  std::shared_ptr<tensorrt_inferencer::TensorRTInferencer> inferencer_;
+
+  // ROS2 parameters
+  std::string input_topic_;
+  std::string output_topic_;
+  std::string output_overlay_topic_;
+  int queue_size_;
+  double processing_frequency_;
+
+  tensorrt_inferencer::TensorRTInferencer::Config config_;
+  fs::path engine_path_;
+  std::string engine_filename_;
+
+  // Thread safety
+  std::mutex image_mutex_;
+  std::atomic<bool> processing_image_;
+  std::atomic<uint64_t> image_sequence_number_;
+  uint64_t last_processed_sequence_;
+
+  // Image storage
+  cv::Mat latest_image_;
+  std_msgs::msg::Header latest_header_;
 };
 
 } // namespace fcn_segmentation

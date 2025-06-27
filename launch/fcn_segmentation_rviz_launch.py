@@ -9,7 +9,6 @@ from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node, SetParameter
 from launch_ros.substitutions import FindPackageShare
 
-
 def generate_launch_description():
     bag_exec = ExecuteProcess(
         cmd=['ros2', 'bag', 'play', '-r', '1.0',
@@ -36,12 +35,12 @@ def generate_launch_description():
 
     return LaunchDescription([
         SetParameter(name='use_sim_time', value=True),
-        bag_exec,
+        fcn_segmentation_launch,
         rviz_node,
         TimerAction(
-            period=1.0,  # delay these nodes for 1.0 seconds.
+            period=2.0,  # delay these nodes for 1.0 seconds.
             actions=[
-                fcn_segmentation_launch
+                bag_exec
             ]
         )
     ])
