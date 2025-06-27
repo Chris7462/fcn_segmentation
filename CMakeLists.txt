@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(fcn_segmentation)
 
+set(CMAKE_BUILD_TYPE Release)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -13,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(tensorrt_inferencer REQUIRED)
 
 add_executable(fcn_segmentation_node
@@ -27,9 +30,10 @@ ament_target_dependencies(fcn_segmentation_node PUBLIC
   rclcpp
   sensor_msgs
   ament_index_cpp
+  cv_bridge
   tensorrt_inferencer)
 
-target_compile_features(fcn_segmentation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(fcn_segmentation_node PUBLIC cxx_std_17)  # Require C++17
 
 install(TARGETS fcn_segmentation_node
   DESTINATION lib/${PROJECT_NAME})

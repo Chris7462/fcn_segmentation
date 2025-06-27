@@ -3,14 +3,20 @@ from os.path import join
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, TimerAction
+from launch.actions import ExecuteProcess, IncludeLaunchDescription, DeclareLaunchArgument, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
-from launch_ros.actions import Node, SetParameter
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    declare_use_sim_time = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (bagfile) clock if true'
+    )
+
     bag_exec = ExecuteProcess(
         cmd=['ros2', 'bag', 'play', '-r', '1.0',
              '/data/kitti/raw/2011_09_29_drive_0071_sync_bag', '--clock']
@@ -22,7 +28,10 @@ def generate_launch_description():
                 FindPackageShare('fcn_segmentation'), 'launch',
                 'fcn_segmentation_launch.py'
             ])
-        ])
+        ]),
+        launch_arguments={
+            'use_sim_time': LaunchConfiguration('use_sim_time')
+        }.items()
     )
 
     rviz_node = Node(
@@ -35,13 +44,13 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        SetParameter(name='use_sim_time', value=True),
-        bag_exec,
+        declare_use_sim_time,
+        fcn_segmentation_launch,
         rviz_node,
         TimerAction(
-            period=1.0,  # delay these nodes for 1.0 seconds.
+            period=2.0,  # delay these nodes for 2.0 seconds.
             actions=[
-                fcn_segmentation_launch
+                bag_exec
             ]
         )
     ])
