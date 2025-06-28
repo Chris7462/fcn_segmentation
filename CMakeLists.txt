@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(fcn_segmentation)
 
+set(CMAKE_BUILD_TYPE Release)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -31,7 +33,7 @@ ament_target_dependencies(fcn_segmentation_node PUBLIC
   cv_bridge
   tensorrt_inferencer)
 
-target_compile_features(fcn_segmentation_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(fcn_segmentation_node PUBLIC cxx_std_17)  # Require C++17
 
 install(TARGETS fcn_segmentation_node
   DESTINATION lib/${PROJECT_NAME})

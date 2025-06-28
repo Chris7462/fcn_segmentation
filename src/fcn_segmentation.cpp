@@ -218,7 +218,12 @@ void FCNSegmentation::timer_callback()
 
   try {
     // Process the image
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     cv::Mat segmentation_result = process_image(current_image);
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+    RCLCPP_INFO(get_logger(), "Timer callback processing image processed in %.4f seconds", elapsed_seconds.count());
+
     cv::Mat overlay = inferencer_->create_overlay(current_image, segmentation_result, 0.5f);
 
     if (!segmentation_result.empty()) {
@@ -254,14 +259,23 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
     }
 
     // Run inference
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
     auto segmentation_mask = inferencer_->infer(processed_image);
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end_time - start_time;
+    RCLCPP_INFO(get_logger(), "Processing image inference time in %.4f seconds", elapsed_seconds.count());
+
     if (segmentation_mask.empty()) {
       RCLCPP_WARN(get_logger(), "Inference returned empty result");
       return cv::Mat();
     }
 
     // Decode segmentation
+    std::chrono::steady_clock::time_point start_time1 = std::chrono::steady_clock::now();
     cv::Mat segmentation = inferencer_->decode_segmentation(segmentation_mask);
+    std::chrono::steady_clock::time_point end_time1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds1 = end_time1 - start_time1;
+    RCLCPP_INFO(get_logger(), "Decode segmentation time in %.4f seconds", elapsed_seconds1.count());
 
     // Resize back to original size if necessary
     if (segmentation.cols != input_image.cols || segmentation.rows != input_image.rows) {
