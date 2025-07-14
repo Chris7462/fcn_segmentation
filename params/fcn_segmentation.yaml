@@ -7,10 +7,9 @@ fcn_segmentation_node:
     queue_size: 10  # QoS parameter
     processing_frequency: 40.0  # Hz
     # Model parameters
-    engine_file: "fcn_resnet50_1238x374.trt"
+    engine_file: "fcn_resnet50_1238x374.engine"
     width: 1238
     height: 374
     num_classes: 21
-    num_streams: 1 # Use 1 stream for synchronous processing
     warmup_iterations: 2 # Warmup iterations for better performance
     log_level: 3  # 0: Internal Error, 1: Error , 2: Warning, 3: Info, 4: Verbose
