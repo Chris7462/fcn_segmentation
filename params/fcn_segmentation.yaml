@@ -11,6 +11,5 @@ fcn_segmentation_node:
     width: 1238
     height: 374
     num_classes: 21
-    num_streams: 1 # Use 1 stream for synchronous processing
     warmup_iterations: 2 # Warmup iterations for better performance
     log_level: 3  # 0: Internal Error, 1: Error , 2: Warning, 3: Info, 4: Verbose

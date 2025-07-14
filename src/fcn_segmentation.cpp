@@ -62,7 +62,6 @@ bool FCNSegmentation::initialize_parameters()
     config_.width = declare_parameter<int>("width", 1238);
     config_.height = declare_parameter<int>("height", 374);
     config_.num_classes = declare_parameter<int>("num_classes", 21);
-    config_.num_streams = declare_parameter<int>("num_streams", 1);
     config_.warmup_iterations = declare_parameter<int>("warmup_iterations", 2);
     config_.log_level = static_cast<tensorrt_inferencer::Logger::Severity>(
       declare_parameter<int>("log_level", 3)); // Set log level
@@ -254,14 +253,12 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
     }
 
     // Run inference
-    auto segmentation_mask = inferencer_->infer(processed_image);
-    if (segmentation_mask.empty()) {
+    auto segmentation = inferencer_->infer(processed_image);
+
+    if (segmentation.empty()) {
       RCLCPP_WARN(get_logger(), "Inference returned empty result");
       return cv::Mat();
     }
-
-    // Decode segmentation
-    cv::Mat segmentation = inferencer_->decode_segmentation(segmentation_mask);
 
     // Resize back to original size if necessary
     if (segmentation.cols != input_image.cols || segmentation.rows != input_image.rows) {
