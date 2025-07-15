@@ -5,7 +5,7 @@ fcn_segmentation_node:
     output_topic: "fcn_segmentation"
     output_overlay_topic: "fcn_segmentation_overlay"
     queue_size: 10  # QoS parameter
-    processing_frequency: 40.0  # Hz
+    processing_frequency: 50.0  # Hz
     # Model parameters
     engine_file: "fcn_resnet50_1238x374.engine"
     width: 1238

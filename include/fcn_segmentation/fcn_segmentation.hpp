@@ -8,6 +8,7 @@
 
 // ROS header
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/callback_group.hpp>
 #include <std_msgs/msg/header.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
@@ -90,6 +91,10 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr fcn_overlay_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
+  // Callback groups for parallel execution
+  rclcpp::CallbackGroup::SharedPtr image_callback_group_;
+  rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
+
   // TensorRT inferencer
   std::shared_ptr<tensorrt_inferencer::TensorRTInferencer> inferencer_;
 
@@ -104,15 +109,15 @@ private:
   fs::path engine_path_;
   std::string engine_filename_;
 
-  // Thread safety
+  // Thread safety for image callback
   std::mutex image_mutex_;
   std::atomic<bool> processing_image_;
   std::atomic<uint64_t> image_sequence_number_;
-  uint64_t last_processed_sequence_;
 
-  // Image storage
+  // Thread safety for publishing
   cv::Mat latest_image_;
   std_msgs::msg::Header latest_header_;
+  uint64_t last_processed_sequence_;
 };
 
 } // namespace fcn_segmentation

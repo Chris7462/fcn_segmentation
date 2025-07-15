@@ -134,25 +134,36 @@ void FCNSegmentation::initialize_ros_components()
   image_qos.durability(rclcpp::DurabilityPolicy::Volatile);
   image_qos.history(rclcpp::HistoryPolicy::KeepLast);
 
+  // Create separate callback groups for parallel execution
+  image_callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  timer_callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+  // Create subscription options with dedicated callback group
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.callback_group = image_callback_group_;
+
   // Create subscriber with proper callback binding
   img_sub_ = create_subscription<sensor_msgs::msg::Image>(
     input_topic_, image_qos,
-    std::bind(&FCNSegmentation::image_callback, this, std::placeholders::_1)
+    std::bind(&FCNSegmentation::image_callback, this, std::placeholders::_1),
+    sub_options
   );
 
   // Create publisher
   fcn_pub_ = create_publisher<sensor_msgs::msg::Image>(output_topic_, image_qos);
-  fcn_overlay_pub_ = create_publisher<sensor_msgs::msg::Image>(output_overlay_topic_ , image_qos);
+  fcn_overlay_pub_ = create_publisher<sensor_msgs::msg::Image>(output_overlay_topic_, image_qos);
 
   // Create timer for processing at specified frequency
   auto timer_period = std::chrono::duration<double>(1.0 / processing_frequency_);
   timer_ = create_wall_timer(
     std::chrono::duration_cast<std::chrono::nanoseconds>(timer_period),
-    std::bind(&FCNSegmentation::timer_callback, this)
+    std::bind(&FCNSegmentation::timer_callback, this),
+    timer_callback_group_
   );
 
-  RCLCPP_INFO(get_logger(), "ROS components initialized - Input: %s, Output: %s, Frequency: %.1f Hz",
-              input_topic_.c_str(), output_topic_.c_str(), processing_frequency_);
+  RCLCPP_INFO(get_logger(), "ROS components initialized with separate callback groups");
+  RCLCPP_INFO(get_logger(), "Input: %s, Output: %s, Frequency: %.1f Hz",
+    input_topic_.c_str(), output_topic_.c_str(), processing_frequency_);
 }
 
 void FCNSegmentation::image_callback(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -189,7 +200,7 @@ void FCNSegmentation::timer_callback()
   }
 
   // Check if we have subscribers before processing
-  if (fcn_pub_->get_subscription_count() == 0) {
+  if (fcn_pub_->get_subscription_count() == 0 || fcn_overlay_pub_->get_subscription_count() == 0) {
     return;
   }
 
@@ -218,11 +229,20 @@ void FCNSegmentation::timer_callback()
   try {
     // Process the image
     cv::Mat segmentation_result = process_image(current_image);
-    cv::Mat overlay = inferencer_->create_overlay(current_image, segmentation_result, 0.5f);
 
     if (!segmentation_result.empty()) {
-      publish_segmentation_result(segmentation_result, current_header);
-      publish_overlay_result(overlay, current_header);
+      // Create overlay
+      cv::Mat overlay = inferencer_->create_overlay(current_image, segmentation_result, 0.5f);
+
+      // Publish results
+      if (fcn_pub_->get_subscription_count() > 0) {
+        publish_segmentation_result(segmentation_result, current_header);
+      }
+
+      if (fcn_overlay_pub_->get_subscription_count() > 0) {
+        publish_overlay_result(overlay, current_header);
+      }
+
       last_processed_sequence_ = current_sequence; // Update only on successful processing
     } else {
       RCLCPP_WARN(get_logger(), "Segmentation processing returned empty result");
