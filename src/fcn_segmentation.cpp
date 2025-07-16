@@ -1,7 +1,8 @@
 // C++ header
 #include <string>
 #include <chrono>
-#include <algorithm>
+#include <functional>
+#include <exception>
 
 // OpenCV header
 #include <opencv2/highgui.hpp>
