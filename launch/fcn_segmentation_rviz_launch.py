@@ -48,7 +48,7 @@ def generate_launch_description():
         fcn_segmentation_launch,
         rviz_node,
         TimerAction(
-            period=2.0,  # delay these nodes for 2.0 seconds.
+            period=3.0,  # delay these nodes for 3.0 seconds.
             actions=[
                 bag_exec
             ]

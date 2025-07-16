@@ -1,3 +1,8 @@
+// C++ header
+#include <algorithm>
+#include <memory>
+#include <thread>
+
 // ROS header
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 
