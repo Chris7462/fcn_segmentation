@@ -1,6 +1,7 @@
 // C++ header
 #include <string>
 #include <chrono>
+#include <algorithm>
 
 // OpenCV header
 #include <opencv2/highgui.hpp>
@@ -18,9 +19,7 @@ namespace fcn_segmentation
 
 FCNSegmentation::FCNSegmentation()
 : Node("fcn_segmentation_node"),
-  processing_image_(false),
-  image_sequence_number_(0),
-  last_processed_sequence_(0)
+  processing_in_progress_(false)
 {
   // Initialize ROS2 parameters with validation
   if (!initialize_parameters()) {
@@ -39,7 +38,8 @@ FCNSegmentation::FCNSegmentation()
   // Initialize ROS2 components
   initialize_ros_components();
 
-  RCLCPP_INFO(get_logger(), "FCN Segmentation node initialized successfully");
+  RCLCPP_INFO(get_logger(), "FCN Segmentation node initialized successfully with bounded queue (max: %d)",
+    max_processing_queue_size_);
 }
 
 FCNSegmentation::~FCNSegmentation()
@@ -56,6 +56,9 @@ bool FCNSegmentation::initialize_parameters()
     output_overlay_topic_ = declare_parameter("output_topic_overlay", std::string("fcn_segmentation_overlay"));
     queue_size_ = declare_parameter<int>("queue_size", 10);
     processing_frequency_ = declare_parameter<double>("processing_frequency", 40.0);
+
+    // Processing queue parameter - small bounded queue for burst handling
+    max_processing_queue_size_ = declare_parameter<int>("max_processing_queue_size", 3);
 
     // Declare and get parameters with validation
     engine_filename_ = declare_parameter("engine_file", std::string("fcn_resnet50_1238x374.trt"));
@@ -84,6 +87,11 @@ bool FCNSegmentation::initialize_parameters()
 
     if (processing_frequency_ <= 0) {
       RCLCPP_ERROR(get_logger(), "Invalid processing frequency: %.2f Hz", processing_frequency_);
+      return false;
+    }
+
+    if (max_processing_queue_size_ <= 0 || max_processing_queue_size_ > 10) {
+      RCLCPP_ERROR(get_logger(), "Invalid max processing queue size: %d (should be 1-10)", max_processing_queue_size_);
       return false;
     }
 
@@ -168,25 +176,21 @@ void FCNSegmentation::initialize_ros_components()
 
 void FCNSegmentation::image_callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
-  // Thread-safe image storage
-  std::lock_guard<std::mutex> lock(image_mutex_);
-
   try {
-    // Convert ROS image to OpenCV format
-    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    // Thread-safe queue management
+    std::lock_guard<std::mutex> lock(mtx_);
 
-    if (!cv_ptr || cv_ptr->image.empty()) {
-      RCLCPP_WARN(get_logger(), "Received empty or invalid image");
-      return;
+    // Check if queue is full
+    if (img_buff_.size() >= static_cast<size_t>(max_processing_queue_size_)) {
+      // Remove oldest image to make room for new one
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
+        "Processing queue full, dropping oldest image (queue size: %ld)", img_buff_.size());
+      img_buff_.pop();
     }
 
-    // Store the latest image and header
-    latest_image_ = cv_ptr->image.clone();
-    latest_header_ = msg->header;
-    image_sequence_number_.fetch_add(1); // Increment sequence number for new image
+    // Add new image to queue
+    img_buff_.push(msg);
 
-  } catch (const cv_bridge::Exception& e) {
-    RCLCPP_ERROR(get_logger(), "cv_bridge exception: %s", e.what());
   } catch (const std::exception& e) {
     RCLCPP_ERROR(get_logger(), "Exception in image callback: %s", e.what());
   }
@@ -194,8 +198,8 @@ void FCNSegmentation::image_callback(const sensor_msgs::msg::Image::SharedPtr ms
 
 void FCNSegmentation::timer_callback()
 {
-  // Skip processing if already processing or no image received
-  if (processing_image_.load()) {
+  // Skip if already processing or no subscribers
+  if (processing_in_progress_.load()) {
     return;
   }
 
@@ -204,56 +208,63 @@ void FCNSegmentation::timer_callback()
     return;
   }
 
-  // Check if we have a new image to process
-  uint64_t current_sequence = image_sequence_number_.load();
-  if (current_sequence == last_processed_sequence_) {
-    return; // No new image to process
+  // Get next image from queue
+  sensor_msgs::msg::Image::SharedPtr msg;
+  bool has_image = false;
+
+  {
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (!img_buff_.empty()) {
+      msg = img_buff_.front();
+      img_buff_.pop();
+      has_image = true;
+    }
   }
 
-  cv::Mat current_image;
-  std_msgs::msg::Header current_header;
-
-  // Thread-safe image retrieval
-  {
-    std::lock_guard<std::mutex> lock(image_mutex_);
-    if (latest_image_.empty()) {
-      return;
-    }
-    current_image = latest_image_.clone();
-    current_header = latest_header_;
+  if (!has_image) {
+    return; // No image to process
   }
 
   // Set processing flag
-  processing_image_.store(true);
+  processing_in_progress_.store(true);
 
   try {
+    // Convert ROS image to OpenCV format
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+
+    if (!cv_ptr || cv_ptr->image.empty()) {
+      RCLCPP_WARN(get_logger(), "Received empty or invalid image");
+      processing_in_progress_.store(false);
+      return;
+    }
+
     // Process the image
-    cv::Mat segmentation_result = process_image(current_image);
+    cv::Mat segmentation_result = process_image(cv_ptr->image);
 
     if (!segmentation_result.empty()) {
       // Create overlay
-      cv::Mat overlay = inferencer_->create_overlay(current_image, segmentation_result, 0.5f);
+      cv::Mat overlay = inferencer_->create_overlay(cv_ptr->image, segmentation_result, 0.5f);
 
       // Publish results
       if (fcn_pub_->get_subscription_count() > 0) {
-        publish_segmentation_result(segmentation_result, current_header);
+        publish_segmentation_result(segmentation_result, msg->header);
       }
 
       if (fcn_overlay_pub_->get_subscription_count() > 0) {
-        publish_overlay_result(overlay, current_header);
+        publish_overlay_result(overlay, msg->header);
       }
-
-      last_processed_sequence_ = current_sequence; // Update only on successful processing
     } else {
       RCLCPP_WARN(get_logger(), "Segmentation processing returned empty result");
     }
 
+  } catch (const cv_bridge::Exception& e) {
+    RCLCPP_ERROR(get_logger(), "cv_bridge exception: %s", e.what());
   } catch (const std::exception& e) {
     RCLCPP_ERROR(get_logger(), "Exception during image processing: %s", e.what());
   }
 
   // Clear processing flag
-  processing_image_.store(false);
+  processing_in_progress_.store(false);
 }
 
 cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)

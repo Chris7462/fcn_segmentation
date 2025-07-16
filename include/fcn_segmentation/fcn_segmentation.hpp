@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <queue>
 
 // ROS header
 #include <rclcpp/rclcpp.hpp>
@@ -104,20 +105,16 @@ private:
   std::string output_overlay_topic_;
   int queue_size_;
   double processing_frequency_;
+  int max_processing_queue_size_;
 
   tensorrt_inferencer::TensorRTInferencer::Config config_;
   fs::path engine_path_;
   std::string engine_filename_;
 
-  // Thread safety for image callback
-  std::mutex image_mutex_;
-  std::atomic<bool> processing_image_;
-  std::atomic<uint64_t> image_sequence_number_;
-
-  // Thread safety for publishing
-  cv::Mat latest_image_;
-  std_msgs::msg::Header latest_header_;
-  uint64_t last_processed_sequence_;
+  // Simplified image buffer
+  std::queue<sensor_msgs::msg::Image::SharedPtr> img_buff_;
+  std::mutex mtx_;
+  std::atomic<bool> processing_in_progress_;
 };
 
 } // namespace fcn_segmentation
