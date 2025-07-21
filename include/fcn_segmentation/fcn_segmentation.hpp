@@ -17,7 +17,7 @@
 #include <opencv2/core.hpp>
 
 // local header
-#include "tensorrt_inferencer/tensorrt_inferencer.hpp"
+#include "fcn_trt_backend/fcn_trt_backend.hpp"
 
 
 namespace fcn_segmentation
@@ -97,7 +97,7 @@ private:
   rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
 
   // TensorRT inferencer
-  std::shared_ptr<tensorrt_inferencer::TensorRTInferencer> inferencer_;
+  std::shared_ptr<fcn_trt_backend::FcnTrtBackend> inferencer_;
 
   // ROS2 parameters
   std::string input_topic_;
@@ -107,7 +107,7 @@ private:
   double processing_frequency_;
   int max_processing_queue_size_;
 
-  tensorrt_inferencer::TensorRTInferencer::Config config_;
+  fcn_trt_backend::FcnTrtBackend::Config config_;
   fs::path engine_path_;
   std::string engine_filename_;
 

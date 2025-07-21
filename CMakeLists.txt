@@ -16,7 +16,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(cv_bridge REQUIRED)
-find_package(tensorrt_inferencer REQUIRED)
+find_package(fcn_trt_backend REQUIRED)
 
 add_executable(fcn_segmentation_node
   src/fcn_segmentation_node.cpp
@@ -31,7 +31,7 @@ ament_target_dependencies(fcn_segmentation_node PUBLIC
   sensor_msgs
   ament_index_cpp
   cv_bridge
-  tensorrt_inferencer)
+  fcn_trt_backend)
 
 target_compile_features(fcn_segmentation_node PUBLIC cxx_std_17)  # Require C++17
 

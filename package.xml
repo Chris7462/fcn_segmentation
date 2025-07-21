@@ -12,7 +12,7 @@
   <depend>sensor_msgs</depend>
   <depend>ament_index_cpp</depend>
   <depend>cv_bridge</depend>
-  <depend>tensorrt_inferencer</depend>
+  <depend>fcn_trt_backend</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

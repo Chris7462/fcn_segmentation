@@ -67,7 +67,7 @@ bool FCNSegmentation::initialize_parameters()
     config_.height = declare_parameter<int>("height", 374);
     config_.num_classes = declare_parameter<int>("num_classes", 21);
     config_.warmup_iterations = declare_parameter<int>("warmup_iterations", 2);
-    config_.log_level = static_cast<tensorrt_inferencer::Logger::Severity>(
+    config_.log_level = static_cast<fcn_trt_backend::Logger::Severity>(
       declare_parameter<int>("log_level", 3)); // Set log level
 
     // Validation
@@ -119,10 +119,10 @@ bool FCNSegmentation::initialize_inferencer()
   }
 
   try {
-    inferencer_ = std::make_shared<tensorrt_inferencer::TensorRTInferencer>(engine_path_, config_);
+    inferencer_ = std::make_shared<fcn_trt_backend::FcnTrtBackend>(engine_path_, config_);
 
     if (!inferencer_) {
-      RCLCPP_ERROR(get_logger(), "Failed to create TensorRTInferencer instance");
+      RCLCPP_ERROR(get_logger(), "Failed to create FcnTrtBackend instance");
       return false;
     }
 
@@ -130,7 +130,7 @@ bool FCNSegmentation::initialize_inferencer()
     return true;
 
   } catch (const std::exception& e) {
-    RCLCPP_ERROR(get_logger(), "Exception creating TensorRTInferencer: %s", e.what());
+    RCLCPP_ERROR(get_logger(), "Exception creating FcnTrtBackend: %s", e.what());
     return false;
   }
 }
