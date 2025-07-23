@@ -97,7 +97,7 @@ private:
   rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
 
   // TensorRT inferencer
-  std::shared_ptr<fcn_trt_backend::FcnTrtBackend> inferencer_;
+  std::shared_ptr<fcn_trt_backend::FcnTrtBackend> segmentor;
 
   // ROS2 parameters
   std::string input_topic_;

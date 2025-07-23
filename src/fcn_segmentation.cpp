@@ -119,9 +119,9 @@ bool FCNSegmentation::initialize_inferencer()
   }
 
   try {
-    inferencer_ = std::make_shared<fcn_trt_backend::FcnTrtBackend>(engine_path_, config_);
+    segmentor = std::make_shared<fcn_trt_backend::FcnTrtBackend>(engine_path_, config_);
 
-    if (!inferencer_) {
+    if (!segmentor) {
       RCLCPP_ERROR(get_logger(), "Failed to create FcnTrtBackend instance");
       return false;
     }
@@ -244,7 +244,7 @@ void FCNSegmentation::timer_callback()
 
     if (!segmentation_result.empty()) {
       // Create overlay
-      cv::Mat overlay = inferencer_->create_overlay(cv_ptr->image, segmentation_result, 0.5f);
+      cv::Mat overlay = segmentor->create_overlay(cv_ptr->image, segmentation_result, 0.5f);
 
       // Publish results
       if (fcn_pub_->get_subscription_count() > 0) {
@@ -285,7 +285,7 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
     }
 
     // Run inference
-    auto segmentation = inferencer_->infer(processed_image);
+    auto segmentation = segmentor->infer(processed_image);
 
     if (segmentation.empty()) {
       RCLCPP_WARN(get_logger(), "Inference returned empty result");
