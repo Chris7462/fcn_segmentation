@@ -79,10 +79,12 @@ private:
    * @param segmentation_mask Segmentation result as OpenCV Mat
    * @param header Original message header for timestamp consistency
    */
-  void publish_segmentation_result(const cv::Mat & segmentation,
+  void publish_segmentation_result(
+    const cv::Mat & segmentation,
     const std_msgs::msg::Header & header);
 
-  void publish_overlay_result(const cv::Mat & overlay,
+  void publish_overlay_result(
+    const cv::Mat & overlay,
     const std_msgs::msg::Header & header);
 
 private:
@@ -97,7 +99,7 @@ private:
   rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
 
   // TensorRT inferencer
-  std::shared_ptr<fcn_trt_backend::FcnTrtBackend> segmentor;
+  std::shared_ptr<fcn_trt_backend::FCNTrtBackend> segmentor;
 
   // ROS2 parameters
   std::string input_topic_;
@@ -107,7 +109,7 @@ private:
   double processing_frequency_;
   int max_processing_queue_size_;
 
-  fcn_trt_backend::FcnTrtBackend::Config config_;
+  fcn_trt_backend::FCNTrtBackend::Config config_;
   fs::path engine_path_;
   std::string engine_filename_;
 

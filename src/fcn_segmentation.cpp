@@ -39,7 +39,8 @@ FCNSegmentation::FCNSegmentation()
   // Initialize ROS2 components
   initialize_ros_components();
 
-  RCLCPP_INFO(get_logger(), "FCN Segmentation node initialized successfully with bounded queue (max: %d)",
+  RCLCPP_INFO(get_logger(),
+    "FCN Segmentation node initialized successfully with bounded queue (max: %d)",
     max_processing_queue_size_);
 }
 
@@ -52,9 +53,11 @@ bool FCNSegmentation::initialize_parameters()
 {
   try {
     // ROS2 parameters
-    input_topic_ = declare_parameter("input_topic", std::string("kitti/camera/color/left/image_raw"));
+    input_topic_ = declare_parameter("input_topic",
+      std::string("kitti/camera/color/left/image_raw"));
     output_topic_ = declare_parameter("output_topic", std::string("fcn_segmentation"));
-    output_overlay_topic_ = declare_parameter("output_topic_overlay", std::string("fcn_segmentation_overlay"));
+    output_overlay_topic_ = declare_parameter("output_topic_overlay",
+      std::string("fcn_segmentation_overlay"));
     queue_size_ = declare_parameter<int>("queue_size", 10);
     processing_frequency_ = declare_parameter<double>("processing_frequency", 40.0);
 
@@ -92,7 +95,8 @@ bool FCNSegmentation::initialize_parameters()
     }
 
     if (max_processing_queue_size_ <= 0 || max_processing_queue_size_ > 10) {
-      RCLCPP_ERROR(get_logger(), "Invalid max processing queue size: %d (should be 1-10)", max_processing_queue_size_);
+      RCLCPP_ERROR(get_logger(), "Invalid max processing queue size: %d (should be 1-10)",
+        max_processing_queue_size_);
       return false;
     }
 
@@ -104,7 +108,7 @@ bool FCNSegmentation::initialize_parameters()
       engine_path_.c_str(), config_.width, config_.height, config_.num_classes);
 
     return true;
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Exception during parameter initialization: %s", e.what());
     return false;
   }
@@ -119,18 +123,18 @@ bool FCNSegmentation::initialize_inferencer()
   }
 
   try {
-    segmentor = std::make_shared<fcn_trt_backend::FcnTrtBackend>(engine_path_, config_);
+    segmentor = std::make_shared<fcn_trt_backend::FCNTrtBackend>(engine_path_, config_);
 
     if (!segmentor) {
-      RCLCPP_ERROR(get_logger(), "Failed to create FcnTrtBackend instance");
+      RCLCPP_ERROR(get_logger(), "Failed to create FCNTrtBackend instance");
       return false;
     }
 
     RCLCPP_INFO(get_logger(), "TensorRT inferencer initialized successfully");
     return true;
 
-  } catch (const std::exception& e) {
-    RCLCPP_ERROR(get_logger(), "Exception creating FcnTrtBackend: %s", e.what());
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(get_logger(), "Exception creating FCNTrtBackend: %s", e.what());
     return false;
   }
 }
@@ -192,7 +196,7 @@ void FCNSegmentation::image_callback(const sensor_msgs::msg::Image::SharedPtr ms
     // Add new image to queue
     img_buff_.push(msg);
 
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Exception in image callback: %s", e.what());
   }
 }
@@ -258,9 +262,9 @@ void FCNSegmentation::timer_callback()
       RCLCPP_WARN(get_logger(), "Segmentation processing returned empty result");
     }
 
-  } catch (const cv_bridge::Exception& e) {
+  } catch (const cv_bridge::Exception & e) {
     RCLCPP_ERROR(get_logger(), "cv_bridge exception: %s", e.what());
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Exception during image processing: %s", e.what());
   }
 
@@ -279,7 +283,8 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
     // Resize image to model input size if necessary
     cv::Mat processed_image;
     if (input_image.cols != config_.width || input_image.rows != config_.height) {
-      cv::resize(input_image, processed_image, cv::Size(config_.width, config_.height), 0, 0, cv::INTER_LINEAR);
+      cv::resize(input_image, processed_image, cv::Size(config_.width, config_.height), 0, 0,
+        cv::INTER_LINEAR);
     } else {
       processed_image = input_image;
     }
@@ -308,7 +313,8 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
   }
 }
 
-void FCNSegmentation::publish_segmentation_result(const cv::Mat & segmentation,
+void FCNSegmentation::publish_segmentation_result(
+  const cv::Mat & segmentation,
   const std_msgs::msg::Header & header)
 {
   try {
@@ -322,12 +328,13 @@ void FCNSegmentation::publish_segmentation_result(const cv::Mat & segmentation,
     auto output_msg = cv_image.toImageMsg();
     fcn_pub_->publish(*output_msg);
 
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Exception during result publishing: %s", e.what());
   }
 }
 
-void FCNSegmentation::publish_overlay_result(const cv::Mat & overlay,
+void FCNSegmentation::publish_overlay_result(
+  const cv::Mat & overlay,
   const std_msgs::msg::Header & header)
 {
   try {
@@ -341,7 +348,7 @@ void FCNSegmentation::publish_overlay_result(const cv::Mat & overlay,
     auto output_msg = cv_image.toImageMsg();
     fcn_overlay_pub_->publish(*output_msg);
 
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(get_logger(), "Exception during result publishing: %s", e.what());
   }
 }
