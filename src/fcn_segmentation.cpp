@@ -65,7 +65,10 @@ bool FCNSegmentation::initialize_parameters()
     max_processing_queue_size_ = declare_parameter<int>("max_processing_queue_size", 3);
 
     // Declare and get parameters with validation
-    engine_filename_ = declare_parameter("engine_file", std::string("fcn_resnet50_1238x374.trt"));
+    std::string engine_package = declare_parameter("engine_package",
+      std::string("fcn_trt_backend"));
+    std::string engine_filename = declare_parameter("engine_filename",
+      std::string("fcn_resnet101_1238x374.trt"));
     config_.width = declare_parameter<int>("width", 1238);
     config_.height = declare_parameter<int>("height", 374);
     config_.num_classes = declare_parameter<int>("num_classes", 21);
@@ -74,7 +77,7 @@ bool FCNSegmentation::initialize_parameters()
       declare_parameter<int>("log_level", 3)); // Set log level
 
     // Validation
-    if (engine_filename_.empty()) {
+    if (engine_filename.empty()) {
       RCLCPP_ERROR(get_logger(), "Engine filename cannot be empty");
       return false;
     }
@@ -101,8 +104,8 @@ bool FCNSegmentation::initialize_parameters()
     }
 
     // Construct engine file path
-    fs::path package_path = ament_index_cpp::get_package_share_directory("fcn_segmentation");
-    engine_path_ = package_path / "engines" / engine_filename_;
+    fs::path package_path = ament_index_cpp::get_package_share_directory(engine_package);
+    engine_path_ = package_path / "engines" / engine_filename;
 
     RCLCPP_INFO(get_logger(), "Parameters initialized - Engine: %s, Dims: %dx%d, Classes: %d",
       engine_path_.c_str(), config_.width, config_.height, config_.num_classes);

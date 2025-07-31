@@ -3,8 +3,8 @@
 <package format="3">
   <name>fcn_segmentation</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="yi-chen@todo.todo">yi-chen</maintainer>
+  <description>FCN Segmentation</description>
+  <maintainer email="chris7462@gmail.com">chris7462</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

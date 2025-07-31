@@ -9,9 +9,6 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -45,9 +42,6 @@ install(DIRECTORY params
   DESTINATION share/${PROJECT_NAME})
 
 install(DIRECTORY rviz
-  DESTINATION share/${PROJECT_NAME})
-
-install(DIRECTORY engines
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
