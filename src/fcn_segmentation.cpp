@@ -13,6 +13,7 @@
 
 // local header
 #include "fcn_segmentation/fcn_segmentation.hpp"
+#include "fcn_trt_backend/segmentation_utils.hpp"
 
 
 namespace fcn_segmentation
@@ -251,7 +252,8 @@ void FCNSegmentation::timer_callback()
 
     if (!segmentation_result.empty()) {
       // Create overlay
-      cv::Mat overlay = segmentor->create_overlay(cv_ptr->image, segmentation_result, 0.5f);
+      cv::Mat overlay = fcn_trt_backend::utils::create_overlay(
+        cv_ptr->image, segmentation_result, 0.5f);
 
       // Publish results
       if (fcn_pub_->get_subscription_count() > 0) {
