@@ -13,6 +13,7 @@
 
 // local header
 #include "fcn_segmentation/fcn_segmentation.hpp"
+#include "fcn_trt_backend/segmentation_utils.hpp"
 
 
 namespace fcn_segmentation
@@ -68,9 +69,9 @@ bool FCNSegmentation::initialize_parameters()
     std::string engine_package = declare_parameter("engine_package",
       std::string("fcn_trt_backend"));
     std::string engine_filename = declare_parameter("engine_filename",
-      std::string("fcn_resnet101_1238x374.trt"));
-    config_.width = declare_parameter<int>("width", 1238);
+      std::string("fcn_resnet101_374x1238.engine"));
     config_.height = declare_parameter<int>("height", 374);
+    config_.width = declare_parameter<int>("width", 1238);
     config_.num_classes = declare_parameter<int>("num_classes", 21);
     config_.warmup_iterations = declare_parameter<int>("warmup_iterations", 2);
     config_.log_level = static_cast<fcn_trt_backend::Logger::Severity>(
@@ -107,8 +108,9 @@ bool FCNSegmentation::initialize_parameters()
     fs::path package_path = ament_index_cpp::get_package_share_directory(engine_package);
     engine_path_ = package_path / "engines" / engine_filename;
 
-    RCLCPP_INFO(get_logger(), "Parameters initialized - Engine: %s, Dims: %dx%d, Classes: %d",
-      engine_path_.c_str(), config_.width, config_.height, config_.num_classes);
+    RCLCPP_INFO(get_logger(),
+      "Parameters initialized - Engine: %s, Classes: %d, Heights: %d, Widths: %d",
+      engine_path_.c_str(), config_.num_classes, config_.height, config_.width);
 
     return true;
   } catch (const std::exception & e) {
@@ -126,9 +128,9 @@ bool FCNSegmentation::initialize_inferencer()
   }
 
   try {
-    segmentor = std::make_shared<fcn_trt_backend::FCNTrtBackend>(engine_path_, config_);
+    segmentor_ = std::make_shared<fcn_trt_backend::FCNTrtBackend>(engine_path_, config_);
 
-    if (!segmentor) {
+    if (!segmentor_) {
       RCLCPP_ERROR(get_logger(), "Failed to create FCNTrtBackend instance");
       return false;
     }
@@ -251,7 +253,8 @@ void FCNSegmentation::timer_callback()
 
     if (!segmentation_result.empty()) {
       // Create overlay
-      cv::Mat overlay = segmentor->create_overlay(cv_ptr->image, segmentation_result, 0.5f);
+      cv::Mat overlay = fcn_trt_backend::utils::create_overlay(
+        cv_ptr->image, segmentation_result, 0.5f);
 
       // Publish results
       if (fcn_pub_->get_subscription_count() > 0) {
@@ -293,7 +296,7 @@ cv::Mat FCNSegmentation::process_image(const cv::Mat & input_image)
     }
 
     // Run inference
-    auto segmentation = segmentor->infer(processed_image);
+    auto segmentation = segmentor_->infer(processed_image);
 
     if (segmentation.empty()) {
       RCLCPP_WARN(get_logger(), "Inference returned empty result");

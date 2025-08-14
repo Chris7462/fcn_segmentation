@@ -9,7 +9,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    DeclareLaunchArgument(
+    declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',  # or 'true' if appropriate
         description='Use simulation time'
@@ -32,5 +32,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        declare_use_sim_time,
         fcn_segmentation_node
     ])
