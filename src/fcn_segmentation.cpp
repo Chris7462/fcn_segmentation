@@ -213,11 +213,6 @@ void FCNSegmentation::timer_callback()
     return;
   }
 
-  // Check if we have subscribers before processing
-  if (fcn_pub_->get_subscription_count() == 0 || fcn_overlay_pub_->get_subscription_count() == 0) {
-    return;
-  }
-
   // Get next image from queue
   sensor_msgs::msg::Image::SharedPtr msg;
   bool has_image = false;
