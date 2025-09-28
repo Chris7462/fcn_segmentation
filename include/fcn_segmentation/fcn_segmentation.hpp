@@ -95,8 +95,7 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
 
   // Callback groups for parallel execution
-  rclcpp::CallbackGroup::SharedPtr image_callback_group_;
-  rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
 
   // TensorRT inferencer
   std::shared_ptr<fcn_trt_backend::FCNTrtBackend> segmentor_;
