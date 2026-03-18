@@ -75,7 +75,7 @@ bool FCNSegmentation::initialize_parameters()
     config_.num_classes = declare_parameter<int>("num_classes", 21);
     config_.warmup_iterations = declare_parameter<int>("warmup_iterations", 2);
     config_.log_level = static_cast<fcn_trt_backend::Logger::Severity>(
-      declare_parameter<int>("log_level", 3)); // Set log level
+      declare_parameter<int>("log_level", 3));
 
     // Validation
     if (engine_filename.empty()) {
@@ -164,8 +164,7 @@ void FCNSegmentation::initialize_ros_components()
   img_sub_ = create_subscription<sensor_msgs::msg::Image>(
     input_topic_, image_qos,
     std::bind(&FCNSegmentation::image_callback, this, std::placeholders::_1),
-    sub_options
-  );
+    sub_options);
 
   // Create publisher
   fcn_pub_ = create_publisher<sensor_msgs::msg::Image>(output_topic_, image_qos);
@@ -176,8 +175,7 @@ void FCNSegmentation::initialize_ros_components()
   timer_ = create_wall_timer(
     std::chrono::duration_cast<std::chrono::nanoseconds>(timer_period),
     std::bind(&FCNSegmentation::timer_callback, this),
-    callback_group_
-  );
+    callback_group_);
 
   RCLCPP_INFO(get_logger(), "ROS components initialized with separate callback groups");
   RCLCPP_INFO(get_logger(), "Input: %s, Output: %s, Frequency: %.1f Hz",
@@ -208,26 +206,21 @@ void FCNSegmentation::image_callback(const sensor_msgs::msg::Image::SharedPtr ms
 
 void FCNSegmentation::timer_callback()
 {
-  // Skip if already processing or no subscribers
+  // Skip if already processing
   if (processing_in_progress_.load()) {
     return;
   }
 
   // Get next image from queue
   sensor_msgs::msg::Image::SharedPtr msg;
-  bool has_image = false;
 
   {
     std::lock_guard<std::mutex> lock(mtx_);
-    if (!img_buff_.empty()) {
-      msg = img_buff_.front();
-      img_buff_.pop();
-      has_image = true;
+    if (img_buff_.empty()) {
+      return;
     }
-  }
-
-  if (!has_image) {
-    return; // No image to process
+    msg = img_buff_.front();
+    img_buff_.pop();
   }
 
   // Set processing flag
