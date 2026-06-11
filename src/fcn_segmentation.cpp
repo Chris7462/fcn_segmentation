@@ -57,7 +57,7 @@ bool FCNSegmentation::initialize_parameters()
     input_topic_ = declare_parameter("input_topic",
       std::string("kitti/camera/color/left/image_raw"));
     output_topic_ = declare_parameter("output_topic", std::string("fcn_segmentation"));
-    output_overlay_topic_ = declare_parameter("output_topic_overlay",
+    output_overlay_topic_ = declare_parameter("output_overlay_topic",
       std::string("fcn_segmentation_overlay"));
     queue_size_ = declare_parameter<int>("queue_size", 10);
     processing_frequency_ = declare_parameter<double>("processing_frequency", 40.0);
