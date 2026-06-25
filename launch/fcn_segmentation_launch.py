@@ -16,7 +16,7 @@ def generate_launch_description():
     )
 
     params = join(
-        get_package_share_directory('fcn_segmentation'), 'params',
+        get_package_share_directory('fcn_segmentation'), 'param',
         'fcn_segmentation.yaml'
     )
 

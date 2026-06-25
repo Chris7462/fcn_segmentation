@@ -4,9 +4,9 @@ fcn_segmentation_node:
     input_topic: "kitti/camera/color/left/image_raw"
     output_topic: "fcn_segmentation"
     output_overlay_topic: "fcn_segmentation_overlay"
-    queue_size: 10  # QoS parameter
+    queue_size: 5  # QoS parameter
     processing_frequency: 50.0  # Hz
-    max_processing_queue_size: 3  # Maximum number of queue
+    max_processing_queue_size: 3  # Maximum number of queued images
     # Model parameters
     engine_package: "fcn_trt_backend"  # Just put the package name here. The actual path will be constructed in the code.
     engine_filename: "fcn_resnet101_374x1238.engine"
