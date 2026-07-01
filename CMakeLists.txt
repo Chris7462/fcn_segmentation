@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
-project(fcn_segmentation)
 
-set(CMAKE_BUILD_TYPE Release)
+project(fcn_segmentation
+  VERSION 1.0.0
+  DESCRIPTION "FCN segmentation ROS2 node"
+  LANGUAGES CXX)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+# Default to a Release build if the user doesn't specify one
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type specified, defaulting to 'Release'.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 # find dependencies
@@ -19,18 +23,22 @@ add_executable(fcn_segmentation_node
   src/fcn_segmentation_node.cpp
   src/fcn_segmentation.cpp)
 
-target_include_directories(fcn_segmentation_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+target_include_directories(fcn_segmentation_node PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(fcn_segmentation_node PUBLIC
-  rclcpp::rclcpp
+target_link_libraries(fcn_segmentation_node PRIVATE
+  ${rclcpp_TARGETS}
   ${sensor_msgs_TARGETS}
-  ament_index_cpp::ament_index_cpp
-  cv_bridge::cv_bridge
-  fcn_trt_backend::fcn_trt_backend)
+  ${ament_index_cpp_TARGETS}
+  ${cv_bridge_TARGETS}
+  ${fcn_trt_backend_TARGETS})
 
-target_compile_features(fcn_segmentation_node PUBLIC cxx_std_17)  # Require C++17
+target_compile_features(fcn_segmentation_node PRIVATE cxx_std_17)  # Require C++17
+
+target_compile_options(fcn_segmentation_node PRIVATE
+  -Wall
+  -Wextra
+  -Wpedantic)
 
 install(TARGETS fcn_segmentation_node
   DESTINATION lib/${PROJECT_NAME})
